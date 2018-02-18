@@ -1,2 +1,3 @@
-# vtex-catalog
+# VtexCatalog
+
 Helpers to manipulate Vtex Catalog API
