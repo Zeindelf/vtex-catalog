@@ -1,5 +1,5 @@
 
-const vtexUtilsVersion = '0.9.5';
+const vtexUtilsVersion = '1.1.0';
 
 export default {
     SEARCH_URL: '/api/catalog_system/pub/products/search/',
