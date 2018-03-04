@@ -14,6 +14,10 @@ export default {
         _private._setSessionCache(catalogCache);
     },
 
+    setEventTime(time) {
+        _private._eventTime = this.globalHelpers.isNumber(time) ? time : CONSTANTS.EVENT_TIME;
+    },
+
     getProductCache() {
         return _private._getProductCache();
     },
@@ -211,8 +215,8 @@ export default {
             return _private._error('searchParamsNotAnObject');
         }
 
-        if ( this.globalHelpers.isUndefined(params.fq) ) {
-            return _private._error('fqPropertyNotFound');
+        if ( ! params.hasOwnProperty('fq') && ! params.hasOwnProperty('ft') ) {
+            return _private._error('searchItemsNotDefined');
         }
 
         if ( ! this.globalHelpers.isArray(range) ) {
@@ -221,31 +225,34 @@ export default {
 
         let mapParam = {map: []};
 
-        // Loop each parameter
-        for ( let i = 0, len = params.fq.length; i < len; i += 1 ) {
-            let param = params.fq[i];
+        if ( params.hasOwnProperty('fq') ) {
+            // Loop each parameter
+            for ( let i = 0, len = params.fq.length; i < len; i += 1 ) {
+                let param = params.fq[i];
 
-            // If param is the category one
-            if ( param.match('C:')) {
-                // Generate a 'c' param in the 'mapParam' for each category
-                let categoryIds = param.split('/');
+                // If param is the category one
+                if ( param.match('C:')) {
+                    // Generate a 'c' param in the 'mapParam' for each category
+                    let categoryIds = param.split('/');
 
-                for ( let z = 0, len = categoryIds.length; z < len; z += 1 ) {
-                    // If the 'categoryId' is a number
-                    if ( categoryIds[z].match(/\d.+/gi) ) {
-                        mapParam.map.push('c');
+                    for ( let z = 0, len = categoryIds.length; z < len; z += 1 ) {
+                        // If the 'categoryId' is a number
+                        if ( categoryIds[z].match(/\d.+/gi) ) {
+                            mapParam.map.push('c');
+                        }
                     }
+                }
+
+                // If param is priceFrom
+                if ( param.match(/P\[.+[\d\w\s]?\]/g) ) {
+                    mapParam.map.push('priceFrom');
                 }
             }
 
-            // If param is priceFrom
-            if ( param.match(/P\[.+[\d\w\s]?\]/g) ) {
-                mapParam.map.push('priceFrom');
-            }
+            // Join mapParam map to generate a string and push it into the params object
+            mapParam.map = mapParam.map.join(',');
         }
 
-        // Join mapParam map to generate a string and push it into the params object
-        mapParam.map = mapParam.map.join(',');
         const rangeParam = {
             _from: ( ( range[0] < 1 ) ? 1 : range[0] ) || 1,
             _to: ( ( range[1] > 50 ) ? 50 : range[1] ) || 50,
@@ -330,7 +337,7 @@ export default {
             cc: searchParams.columns || 100,
             sm: searchParams.sm || 0,
             O: searchParams.order || '',
-            PageNumber: 1,
+            PageNumber: searchParams.page || 1,
         };
 
         if ( searchParams.hasOwnProperty('fq') ) {

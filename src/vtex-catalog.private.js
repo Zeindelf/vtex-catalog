@@ -32,6 +32,8 @@ class Private {
          * @type {Array}
          */
         this._pendingFetchArray = [];
+
+        this._eventTime = CONSTANTS.EVENT_TIME;
     }
 
     _getInstance(vtexUtils, catalog) {
@@ -299,7 +301,7 @@ class Private {
 
         setTimeout(() => {
             $(document).trigger(ev);
-        }, 0);
+        }, this._eventTime);
     }
 }
 

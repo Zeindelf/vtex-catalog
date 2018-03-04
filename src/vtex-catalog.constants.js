@@ -6,6 +6,7 @@ export default {
     PRODUCT_CACHE_NAME: '__vtexCatalog.productCache__',
     SKU_CACHE_NAME: '__vtexCatalog.skuCache__',
     EXPIRE_TIME: 60 * 60 * 4, // Seconds * Minutes * Hours (default: 4h)
+    EVENT_TIME: 90, // Miliseconds
     ERRORS: {
         searchParamsNotDefined: `Search parameters is not defined.`,
         searchParamsNotAnObject: `Search parameters is not a valid Object.`,

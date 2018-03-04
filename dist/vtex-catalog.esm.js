@@ -6,7 +6,7 @@
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-02-18T19:30:35.961Z
+ * Date: 2018-03-04T10:46:23.557Z
  */
 
 var vtexUtilsVersion = '0.9.5';
@@ -16,6 +16,7 @@ var CONSTANTS = {
     PRODUCT_CACHE_NAME: '__vtexCatalog.productCache__',
     SKU_CACHE_NAME: '__vtexCatalog.skuCache__',
     EXPIRE_TIME: 60 * 60 * 4, // Seconds * Minutes * Hours (default: 4h)
+    EVENT_TIME: 90, // Miliseconds
     ERRORS: {
         searchParamsNotDefined: 'Search parameters is not defined.',
         searchParamsNotAnObject: 'Search parameters is not a valid Object.',
@@ -183,6 +184,8 @@ var Private = function () {
          * @type {Array}
          */
         this._pendingFetchArray = [];
+
+        this._eventTime = CONSTANTS.EVENT_TIME;
     }
 
     createClass(Private, [{
@@ -503,7 +506,7 @@ var Private = function () {
 
             setTimeout(function () {
                 $(document).trigger(ev);
-            }, 0);
+            }, this._eventTime);
         }
     }]);
     return Private;
@@ -519,6 +522,9 @@ var vtexCatalogMethods = {
     _setInstance: function _setInstance(vtexUtils, catalogCache) {
         _private._getInstance(vtexUtils, this);
         _private._setSessionCache(catalogCache);
+    },
+    setEventTime: function setEventTime(time) {
+        _private._eventTime = this.globalHelpers.isNumber(time) ? time : CONSTANTS.EVENT_TIME;
     },
     getProductCache: function getProductCache() {
         return _private._getProductCache();
@@ -735,8 +741,8 @@ var vtexCatalogMethods = {
             return _private._error('searchParamsNotAnObject');
         }
 
-        if (this.globalHelpers.isUndefined(params.fq)) {
-            return _private._error('fqPropertyNotFound');
+        if (!params.hasOwnProperty('fq') && !params.hasOwnProperty('ft')) {
+            return _private._error('searchItemsNotDefined');
         }
 
         if (!this.globalHelpers.isArray(range)) {
@@ -745,31 +751,34 @@ var vtexCatalogMethods = {
 
         var mapParam = { map: [] };
 
-        // Loop each parameter
-        for (var i = 0, len = params.fq.length; i < len; i += 1) {
-            var param = params.fq[i];
+        if (params.hasOwnProperty('fq')) {
+            // Loop each parameter
+            for (var i = 0, len = params.fq.length; i < len; i += 1) {
+                var param = params.fq[i];
 
-            // If param is the category one
-            if (param.match('C:')) {
-                // Generate a 'c' param in the 'mapParam' for each category
-                var categoryIds = param.split('/');
+                // If param is the category one
+                if (param.match('C:')) {
+                    // Generate a 'c' param in the 'mapParam' for each category
+                    var categoryIds = param.split('/');
 
-                for (var z = 0, _len3 = categoryIds.length; z < _len3; z += 1) {
-                    // If the 'categoryId' is a number
-                    if (categoryIds[z].match(/\d.+/gi)) {
-                        mapParam.map.push('c');
+                    for (var z = 0, _len3 = categoryIds.length; z < _len3; z += 1) {
+                        // If the 'categoryId' is a number
+                        if (categoryIds[z].match(/\d.+/gi)) {
+                            mapParam.map.push('c');
+                        }
                     }
+                }
+
+                // If param is priceFrom
+                if (param.match(/P\[.+[\d\w\s]?\]/g)) {
+                    mapParam.map.push('priceFrom');
                 }
             }
 
-            // If param is priceFrom
-            if (param.match(/P\[.+[\d\w\s]?\]/g)) {
-                mapParam.map.push('priceFrom');
-            }
+            // Join mapParam map to generate a string and push it into the params object
+            mapParam.map = mapParam.map.join(',');
         }
 
-        // Join mapParam map to generate a string and push it into the params object
-        mapParam.map = mapParam.map.join(',');
         var rangeParam = {
             _from: (range[0] < 1 ? 1 : range[0]) || 1,
             _to: (range[1] > 50 ? 50 : range[1]) || 50
@@ -862,7 +871,7 @@ var vtexCatalogMethods = {
             cc: searchParams.columns || 100,
             sm: searchParams.sm || 0,
             O: searchParams.order || '',
-            PageNumber: 1
+            PageNumber: searchParams.page || 1
         };
 
         if (searchParams.hasOwnProperty('fq')) {
@@ -904,11 +913,6 @@ var vtexCatalogMethods = {
         return def.promise();
     }
 };
-
-/**
- * Create a VtexCatalog class
- * Vtex utilities methods
- */
 
 var VtexCatalog = function VtexCatalog(vtexUtils) {
   var catalogCache = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
