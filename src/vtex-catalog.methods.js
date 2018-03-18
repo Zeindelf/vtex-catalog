@@ -18,6 +18,10 @@ export default {
         _private._eventTime = this.globalHelpers.isNumber(time) ? time : CONSTANTS.EVENT_TIME;
     },
 
+    setShelfClass(className) {
+        _private._className = this.globalHelpers.isString(className) ? className : '';
+    },
+
     getProductCache() {
         return _private._getProductCache();
     },
@@ -362,7 +366,7 @@ export default {
         const search = _private._searchPage(params, headers);
         search.done((result) => {
             if ( splitList ) {
-                const $productsList = $(result).find(`li[layout=${searchParams.shelfId}]`);
+                const $productsList = $(result).find(`li[layout=${searchParams.shelfId}]`).removeAttr('layout').addClass(_private._className);
 
                 def.resolve($productsList);
             } else {

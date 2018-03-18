@@ -32,8 +32,6 @@ class Private {
          * @type {Array}
          */
         this._pendingFetchArray = [];
-
-        this._eventTime = CONSTANTS.EVENT_TIME;
     }
 
     _getInstance(vtexUtils, catalog) {
@@ -247,11 +245,9 @@ class Private {
 
             if ( productData.length ) {
                 this._setSkuCache(this._catalog.skusProductIds);
-
-                def.resolve(productData);
-            } else {
-                def.reject();
             }
+
+            def.resolve(productData);
         });
 
         return def.promise();

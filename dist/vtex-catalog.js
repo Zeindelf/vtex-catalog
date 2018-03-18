@@ -6,7 +6,7 @@
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-03-04T11:42:51.557Z
+ * Date: 2018-03-18T04:06:47.663Z
  */
 
 (function (global, factory) {
@@ -19,10 +19,10 @@ var vtexUtilsVersion = '1.1.0';
 
 var CONSTANTS = {
     SEARCH_URL: '/api/catalog_system/pub/products/search/',
-    PRODUCT_CACHE_NAME: '__vtexCatalog.productCache__',
-    SKU_CACHE_NAME: '__vtexCatalog.skuCache__',
+    PRODUCT_CACHE_NAME: '_vc_product',
+    SKU_CACHE_NAME: '_vc_sku',
     EXPIRE_TIME: 60 * 60 * 4, // Seconds * Minutes * Hours (default: 4h)
-    EVENT_TIME: 90, // Miliseconds
+    EVENT_TIME: 150, // Miliseconds
     ERRORS: {
         searchParamsNotDefined: 'Search parameters is not defined.',
         searchParamsNotAnObject: 'Search parameters is not a valid Object.',
@@ -190,8 +190,6 @@ var Private = function () {
          * @type {Array}
          */
         this._pendingFetchArray = [];
-
-        this._eventTime = CONSTANTS.EVENT_TIME;
     }
 
     createClass(Private, [{
@@ -453,11 +451,9 @@ var Private = function () {
 
                 if (productData.length) {
                     _this2._setSkuCache(_this2._catalog.skusProductIds);
-
-                    def.resolve(productData);
-                } else {
-                    def.reject();
                 }
+
+                def.resolve(productData);
             });
 
             return def.promise();
@@ -531,6 +527,9 @@ var vtexCatalogMethods = {
     },
     setEventTime: function setEventTime(time) {
         _private._eventTime = this.globalHelpers.isNumber(time) ? time : CONSTANTS.EVENT_TIME;
+    },
+    setShelfClass: function setShelfClass(className) {
+        _private._className = this.globalHelpers.isString(className) ? className : '';
     },
     getProductCache: function getProductCache() {
         return _private._getProductCache();
@@ -902,7 +901,7 @@ var vtexCatalogMethods = {
         var search = _private._searchPage(params, headers);
         search.done(function (result) {
             if (splitList) {
-                var $productsList = $(result).find('li[layout=' + searchParams.shelfId + ']');
+                var $productsList = $(result).find('li[layout=' + searchParams.shelfId + ']').removeAttr('layout').addClass(_private._className);
 
                 def.resolve($productsList);
             } else {
@@ -919,11 +918,6 @@ var vtexCatalogMethods = {
         return def.promise();
     }
 };
-
-/**
- * Create a VtexCatalog class
- * Vtex utilities methods
- */
 
 var VtexCatalog = function VtexCatalog(vtexUtils) {
   var catalogCache = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
