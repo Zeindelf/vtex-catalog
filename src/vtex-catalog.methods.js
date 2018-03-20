@@ -258,8 +258,8 @@ export default {
         }
 
         const rangeParam = {
-            _from: ( ( range[0] < 1 ) ? 1 : range[0] ) || 1,
-            _to: ( ( range[1] > 50 ) ? 50 : range[1] ) || 50,
+            _from: ( range[0] < 0 ) ? 1 : range[0] || 1,
+            _to: ( range[1] < 0 ) ? 50 : range[1] || 50,
         };
 
         // Join params and mapParam
@@ -269,12 +269,13 @@ export default {
         const def = $.Deferred();
         /* eslint-enable */
 
+        if ( (rangeParam._to - rangeParam._from) > 49 ) {
+            def.reject('Range must be a max value between 50 items');
+        }
+
         $.ajax({
             url: CONSTANTS.SEARCH_URL,
             data: $.param(params, true),
-            beforeSend(xhr) {
-                xhr.setRequestHeader('resources', '0-49');
-            },
         })
         .done((...results) => def.resolve(...results))
         .fail((err) => def.reject(err));

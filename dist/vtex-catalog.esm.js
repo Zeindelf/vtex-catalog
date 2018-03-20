@@ -6,7 +6,7 @@
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-03-18T06:24:33.462Z
+ * Date: 2018-03-19T23:58:52.682Z
  */
 
 var vtexUtilsVersion = '1.1.0';
@@ -779,8 +779,8 @@ var vtexCatalogMethods = {
         }
 
         var rangeParam = {
-            _from: (range[0] < 1 ? 1 : range[0]) || 1,
-            _to: (range[1] > 50 ? 50 : range[1]) || 50
+            _from: range[0] < 0 ? 1 : range[0] || 1,
+            _to: range[1] < 0 ? 50 : range[1] || 50
         };
 
         // Join params and mapParam
@@ -790,12 +790,13 @@ var vtexCatalogMethods = {
         var def = $.Deferred();
         /* eslint-enable */
 
+        if (rangeParam._to - rangeParam._from > 49) {
+            def.reject('Range must be a max value between 50 items');
+        }
+
         $.ajax({
             url: CONSTANTS.SEARCH_URL,
-            data: $.param(params, true),
-            beforeSend: function beforeSend(xhr) {
-                xhr.setRequestHeader('resources', '0-49');
-            }
+            data: $.param(params, true)
         }).done(function () {
             return def.resolve.apply(def, arguments);
         }).fail(function (err) {
