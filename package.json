@@ -1,6 +1,6 @@
 {
   "name": "vtex-catalog",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Helpers to manipulate Vtex Catalog API",
   "main": "dist/vtex-catalog.common.js",
   "module": "dist/vtex-catalog.esm.js",
