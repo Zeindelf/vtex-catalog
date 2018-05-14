@@ -6,7 +6,7 @@
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-03-20T03:50:19.456Z
+ * Date: 2018-05-14T02:43:55.150Z
  */
 
 (function (global, factory) {
@@ -405,8 +405,11 @@ var Private = function () {
 
                 requests.forEach(function (request, index) {
                     var products = request;
+
                     products.forEach(function (product) {
-                        return _this2._setCache(product);
+                        // Camelize items
+                        product = _this2._parseCamelize(product);
+                        _this2._setCache(product);
                     });
 
                     // Remove resolved fetch from array
@@ -495,6 +498,42 @@ var Private = function () {
         }
 
         /**
+         * Utils
+         */
+
+    }, {
+        key: '_parseCamelize',
+        value: function _parseCamelize(product) {
+            var _this3 = this;
+
+            if (this._camelizeItems) {
+                product = this._globalHelpers.camelize(product);
+
+                if (product.hasOwnProperty('allSpecifications')) {
+                    product.allSpecifications = product.allSpecifications.map(function (item, index) {
+                        return _this3._globalHelpers.camelize(item);
+                    });
+                }
+
+                if (this._camelizeProps) {
+                    for (var key in product) {
+                        if ({}.hasOwnProperty.call(product, key)) {
+                            if (this._globalHelpers.contains(key, this._camelizeProps)) {
+                                if (this._globalHelpers.isArray(product[key])) {
+                                    product[key] = product[key].map(function (item, index) {
+                                        return _this3._globalHelpers.camelize(item);
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return product;
+        }
+
+        /**
          * Request End Events
          * @param  {String} type  Register specific event type
          */
@@ -527,6 +566,13 @@ var vtexCatalogMethods = {
     },
     setEventTime: function setEventTime(time) {
         _private._eventTime = this.globalHelpers.isNumber(time) ? time : CONSTANTS.EVENT_TIME;
+    },
+    setCamelize: function setCamelize() {
+        var camelize = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+        var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+        _private._camelizeItems = camelize;
+        _private._camelizeProps = props;
     },
     setShelfClass: function setShelfClass(className) {
         _private._className = this.globalHelpers.isString(className) ? className : '';
@@ -803,6 +849,14 @@ var vtexCatalogMethods = {
         $.ajax({
             url: CONSTANTS.SEARCH_URL,
             data: $.param(params, true)
+        }).then(function (res, statusText, xhr) {
+            var _res = res.map(function (item, index) {
+                return _private._parseCamelize(item);
+            });
+
+            /* eslint-disable */
+            return $.Deferred().resolve(_res, statusText, xhr).promise();
+            /* eslint-enable */
         }).done(function () {
             return def.resolve.apply(def, arguments);
         }).fail(function (err) {
@@ -920,83 +974,78 @@ var vtexCatalogMethods = {
     }
 };
 
-/**
- * Create a VtexCatalog class
- * Vtex utilities methods
- */
-
 var VtexCatalog = function VtexCatalog(vtexUtils) {
-  var catalogCache = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-  classCallCheck(this, VtexCatalog);
+        var catalogCache = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+        classCallCheck(this, VtexCatalog);
 
-  /**
-   * Version
-   * @type {String}
-   */
-  this.version = '0.8.0';
+        /**
+         * Version
+         * @type {String}
+         */
+        this.version = '0.8.0';
 
-  /**
-   * Package name
-   * @type {String}
-   */
-  this.name = '@VtexCatalog';
+        /**
+         * Package name
+         * @type {String}
+         */
+        this.name = '@VtexCatalog';
 
-  // Validate Vtex Utils
-  if (vtexUtils === undefined) {
-    throw new TypeError(CONSTANTS.MESSAGES.vtexUtils);
-  }
+        // Validate Vtex Utils
+        if (vtexUtils === undefined) {
+                throw new TypeError(CONSTANTS.MESSAGES.vtexUtils);
+        }
 
-  if (vtexUtils.name !== '@VtexUtils') {
-    throw new TypeError(CONSTANTS.MESSAGES.vtexUtils);
-  }
+        if (vtexUtils.name !== '@VtexUtils') {
+                throw new TypeError(CONSTANTS.MESSAGES.vtexUtils);
+        }
 
-  if (vtexUtils.version < CONSTANTS.MESSAGES.vtexUtilsVersion) {
-    throw new Error(CONSTANTS.MESSAGES.vtexUtilsVersionMessage);
-  }
+        if (vtexUtils.version < CONSTANTS.MESSAGES.vtexUtilsVersion) {
+                throw new Error(CONSTANTS.MESSAGES.vtexUtilsVersionMessage);
+        }
 
-  /**
-   * Global Helpers instance
-   * @type {GlobalHelpers}
-   */
-  this.globalHelpers = vtexUtils.globalHelpers;
+        /**
+         * Global Helpers instance
+         * @type {GlobalHelpers}
+         */
+        this.globalHelpers = vtexUtils.globalHelpers;
 
-  /**
-   * Vtex Helpers instance
-   * @type {VtexHelpers}
-   */
-  this.vtexHelpers = vtexUtils.vtexHelpers;
+        /**
+         * Vtex Helpers instance
+         * @type {VtexHelpers}
+         */
+        this.vtexHelpers = vtexUtils.vtexHelpers;
 
-  /**
-   * Local/Session Storage
-   * @type {Object}
-   */
-  this.storage = vtexUtils.storage;
+        /**
+         * Local/Session Storage
+         * @type {Object}
+         */
+        this.storage = vtexUtils.storage;
 
-  /**
-   * Object with data of the products searched
-   * @type {Object}
-   */
-  this.productCache = {};
+        /**
+         * Object with data of the products searched
+         * @type {Object}
+         */
+        this.productCache = {};
 
-  /**
-   * Sku ID map to productId
-   * To avoid looping the products in cache in order to find the
-   * needed sku, use this object to store the product ID of each sku ID
-   * @type {Object}
-   */
-  this.skusProductIds = {};
+        /**
+         * Sku ID map to productId
+         * To avoid looping the products in cache in order to find the
+         * needed sku, use this object to store the product ID of each sku ID
+         * @type {Object}
+         */
+        this.skusProductIds = {};
 
-  /**
-   * Extend public methods
-   * @type {Method}
-   */
-  this.globalHelpers.extend(VtexCatalog.prototype, vtexCatalogMethods);
+        /**
+         * Extend public methods
+         * @type {Method}
+         */
+        this.globalHelpers.extend(VtexCatalog.prototype, vtexCatalogMethods);
 
-  /**
-   * Sets instance for private Methods
-   * @type {Method}
-   */
-  this._setInstance(vtexUtils, catalogCache);
+        /**
+         * Sets instance for private Methods
+         * @type {Method}
+         */
+        this._setInstance(vtexUtils, catalogCache);
 };
 
 return VtexCatalog;

@@ -207,7 +207,12 @@ class Private {
         $.when(...xhrArray).done((...requests) => {
             requests.forEach((request, index) => {
                 const products = request;
-                products.forEach((product) => this._setCache(product));
+
+                products.forEach((product) => {
+                    // Camelize items
+                    product = this._parseCamelize(product);
+                    this._setCache(product);
+                });
 
                 // Remove resolved fetch from array
                 xhrArray.splice(index, 1);
@@ -284,6 +289,33 @@ class Private {
         });
 
         return def.promise();
+    }
+
+    /**
+     * Utils
+     */
+    _parseCamelize(product) {
+        if ( this._camelizeItems ) {
+            product = this._globalHelpers.camelize(product);
+
+            if ( product.hasOwnProperty('allSpecifications') ) {
+                product.allSpecifications = product.allSpecifications.map((item, index) => this._globalHelpers.camelize(item));
+            }
+
+            if ( this._camelizeProps ) {
+                for ( let key in product ) {
+                    if ( {}.hasOwnProperty.call(product, key) ) {
+                        if ( this._globalHelpers.contains(key, this._camelizeProps) ) {
+                            if ( this._globalHelpers.isArray(product[key]) ) {
+                                product[key] = product[key].map((item, index) => this._globalHelpers.camelize(item));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return product;
     }
 
     /**

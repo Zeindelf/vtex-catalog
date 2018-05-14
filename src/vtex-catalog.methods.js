@@ -18,6 +18,11 @@ export default {
         _private._eventTime = this.globalHelpers.isNumber(time) ? time : CONSTANTS.EVENT_TIME;
     },
 
+    setCamelize(camelize = false, props = false) {
+        _private._camelizeItems = camelize;
+        _private._camelizeProps = props;
+    },
+
     setShelfClass(className) {
         _private._className = this.globalHelpers.isString(className) ? className : '';
     },
@@ -276,6 +281,13 @@ export default {
         $.ajax({
             url: CONSTANTS.SEARCH_URL,
             data: $.param(params, true),
+        })
+        .then((res, statusText, xhr) => {
+            const _res = res.map((item, index) => _private._parseCamelize(item));
+
+            /* eslint-disable */
+            return $.Deferred().resolve(_res, statusText, xhr).promise();
+            /* eslint-enable */
         })
         .done((...results) => def.resolve(...results))
         .fail((err) => def.reject(err));
