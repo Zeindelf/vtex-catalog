@@ -37,74 +37,10 @@ class Private {
     _getInstance(vtexUtils, catalog) {
         this._globalHelpers = vtexUtils.globalHelpers;
         this._catalog = catalog;
-
-        this._storage = vtexUtils.storage;
-        this._session = this._storage.session;
     }
 
     _error(type) {
         throw new Error(CONSTANTS.ERRORS[type]);
-    }
-
-    _setSessionCache(catalogCache) {
-        this._catalogCache = catalogCache;
-        this._initStorage();
-    }
-
-    /**
-     * Init and validate Session Store Cache
-     * @return {Void}
-     */
-    _initStorage() {
-        if ( this._globalHelpers.isNull(this._session.get(CONSTANTS.PRODUCT_CACHE_NAME)) ) {
-            this._session.set(CONSTANTS.PRODUCT_CACHE_NAME, {});
-        }
-
-        if ( this._globalHelpers.isNull(this._session.get(CONSTANTS.SKU_CACHE_NAME)) ) {
-            this._session.set(CONSTANTS.SKU_CACHE_NAME, {});
-        }
-    }
-
-    /**
-     * Store products into Session Storage
-     */
-    _setProductCache(products) {
-        if ( this._catalogCache ) {
-            let productCache = this._session.get(CONSTANTS.PRODUCT_CACHE_NAME);
-
-            for ( let id in products ) {
-                if ( ! productCache.hasOwnProperty(id) ) {
-                    productCache[id] = products[id];
-                }
-            }
-
-            this._session.set(CONSTANTS.PRODUCT_CACHE_NAME, productCache, CONSTANTS.EXPIRE_TIME);
-        }
-    }
-
-    /**
-     * Store SKUs ID into Session Storage
-     */
-    _setSkuCache(productsId) {
-        if ( this._catalogCache ) {
-            let productIdCache = this._session.get(CONSTANTS.SKU_CACHE_NAME);
-
-            for ( let id in productsId ) {
-                if ( ! productIdCache.hasOwnProperty(id) ) {
-                    productIdCache[id] = productsId[id];
-                }
-            }
-
-            this._session.set(CONSTANTS.SKU_CACHE_NAME, productIdCache, CONSTANTS.EXPIRE_TIME);
-        }
-    }
-
-    _getProductCache() {
-        return ( this._catalogCache ) ? this._session.get(CONSTANTS.PRODUCT_CACHE_NAME) : this._catalog.productCache;
-    }
-
-    _getSkuCache() {
-        return ( this._catalogCache ) ? this._session.get(CONSTANTS.SKU_CACHE_NAME) : this._catalog.skusProductIds;
     }
 
     /**
@@ -114,10 +50,7 @@ class Private {
     _setCache(product) {
         const {productId, items} = product;
         this._catalog.productCache[productId] = product;
-
-        if ( this._catalogCache ) {
-            this._setProductCache(this._catalog.productCache);
-        }
+        this._catalog.productCache[productId] = product;
 
         items.forEach((item) => {
             const {itemId} = item;
@@ -132,6 +65,7 @@ class Private {
      * @return {Promise}             Promise with search results
      */
     _search(params, headers = {}) {
+        const self = this;
         let paramsFormatted = $.extend({}, params);
         let xhrArray = this._pendingFetchArray;
         let productData = [];
@@ -185,6 +119,8 @@ class Private {
                 url: CONSTANTS.SEARCH_URL,
                 data: $.param(paramsFormatted, true),
                 beforeSend(xhr) {
+                    self._requestStartEvent();
+
                     for ( let header in headers ) {
                         if ( {}.hasOwnProperty.call(headers, header) ) {
                             xhr.setRequestHeader(header, headers[header]);
@@ -248,12 +184,8 @@ class Private {
                 }
             }
 
-            if ( productData.length ) {
-                this._setSkuCache(this._catalog.skusProductIds);
-            }
-
             def.resolve(productData);
-        });
+        }).fail((...err) => def.reject(err));
 
         return def.promise();
     }
@@ -265,6 +197,7 @@ class Private {
      * @return {Promise}             Promise with search results
      */
     _searchPage(params, headers) {
+        const self = this;
         let paramsFormatted = $.extend({}, params);
         let resources = `${this._maxParamsPerRequest}-${(this._maxParamsPerRequest) - 1}`;
 
@@ -276,6 +209,8 @@ class Private {
             url: '/buscapagina/',
             data: $.param(paramsFormatted, true),
             beforeSend(xhr) {
+                self._requestStartEvent();
+
                 for ( let header in headers ) {
                     if ( {}.hasOwnProperty.call(headers, header) ) {
                         xhr.setRequestHeader(header, headers[header]);
@@ -283,10 +218,7 @@ class Private {
                 }
                 xhr.setRequestHeader('resources', resources);
             },
-        })
-        .then((products) => {
-            def.resolve(products);
-        });
+        }).then((products) => def.resolve(products));
 
         return def.promise();
     }
@@ -319,7 +251,19 @@ class Private {
     }
 
     /**
+     * Request Start Event
+     */
+    _requestStartEvent() {
+        /* eslint-disable */
+        const ev = $.Event('requestStart.vtexCatalog');
+        /* eslint-enable */
+
+        $(document).trigger(ev);
+    }
+
+    /**
      * Request End Events
+     *
      * @param  {String} type  Register specific event type
      */
     _requestEndEvent(type) {
@@ -327,9 +271,7 @@ class Private {
         const ev = $.Event(`request${type}End.vtexCatalog`);
         /* eslint-enable */
 
-        setTimeout(() => {
-            $(document).trigger(ev);
-        }, this._eventTime);
+        $(document).trigger(ev);
     }
 }
 

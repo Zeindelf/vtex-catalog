@@ -1,12 +1,8 @@
 
-const vtexUtilsVersion = '1.1.0';
+const vtexUtilsVersion = '1.10.0';
 
 export default {
     SEARCH_URL: '/api/catalog_system/pub/products/search/',
-    PRODUCT_CACHE_NAME: '_vc_product',
-    SKU_CACHE_NAME: '_vc_sku',
-    EXPIRE_TIME: 60 * 60 * 4, // Seconds * Minutes * Hours (default: 4h)
-    EVENT_TIME: 150, // Miliseconds
     ERRORS: {
         searchParamsNotDefined: `Search parameters is not defined.`,
         searchParamsNotAnObject: `Search parameters is not a valid Object.`,

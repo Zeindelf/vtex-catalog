@@ -7,7 +7,7 @@ import vtexCatalogMethods from './vtex-catalog.methods.js';
  * Vtex utilities methods
  */
 class VtexCatalog {
-    constructor(vtexUtils, catalogCache = false) {
+    constructor(vtexUtils) {
         /**
          * Version
          * @type {String}
@@ -46,12 +46,6 @@ class VtexCatalog {
         this.vtexHelpers = vtexUtils.vtexHelpers;
 
         /**
-         * Local/Session Storage
-         * @type {Object}
-         */
-        this.storage = vtexUtils.storage;
-
-        /**
          * Object with data of the products searched
          * @type {Object}
          */
@@ -75,7 +69,7 @@ class VtexCatalog {
          * Sets instance for private Methods
          * @type {Method}
          */
-        this._setInstance(vtexUtils, catalogCache);
+        this._setInstance(vtexUtils);
     }
 }
 

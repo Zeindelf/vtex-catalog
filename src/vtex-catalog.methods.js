@@ -11,11 +11,6 @@ export default {
      */
     _setInstance(vtexUtils, catalogCache) {
         _private._getInstance(vtexUtils, this);
-        _private._setSessionCache(catalogCache);
-    },
-
-    setEventTime(time) {
-        _private._eventTime = this.globalHelpers.isNumber(time) ? time : CONSTANTS.EVENT_TIME;
     },
 
     setCamelize(camelize = false, props = false) {
@@ -25,14 +20,6 @@ export default {
 
     setShelfClass(className) {
         _private._className = this.globalHelpers.isString(className) ? className : '';
-    },
-
-    getProductCache() {
-        return _private._getProductCache();
-    },
-
-    getSkusProductId() {
-        return _private._getSkuCache();
     },
 
     /**
@@ -49,10 +36,8 @@ export default {
         const def = $.Deferred();
         /* eslint-enable */
 
-        const _productCache = _private._getProductCache();
-
-        if ( _productCache[productId] ) {
-            def.resolve(_productCache[productId]);
+        if ( this.productCache[productId] ) {
+            def.resolve(this.productCache[productId]);
         } else {
             let params = {
                 fq: [`productId:${productId}`],
@@ -60,8 +45,8 @@ export default {
 
             const search = _private._search(params);
 
-            // Since it should be only 1 item set index is 0
-            search.done((products) => def.resolve(products[0]));
+            search.done((products) => def.resolve((products.length) ? products[0] : false))
+                .fail((...res) => def.reject(res));
         }
 
         def.then(() => _private._requestEndEvent('Product'));
@@ -84,20 +69,16 @@ export default {
         const def = $.Deferred();
         /* eslint-enable */
 
-        const _productCache = _private._getProductCache();
-        const _skuCache = _private._getSkuCache();
-
-        if ( _skuCache[skuId] ) {
-            def.resolve(_productCache[_skuCache[skuId]]);
+        if ( this.skusProductIds[skuId] ) {
+            def.resolve(this.productCache[this.skusProductIds[skuId]]);
         } else {
             let params = {
                 fq: [`skuId:${skuId}`],
             };
 
             const search = _private._search(params);
-
-            // Since it should be only 1 item set index is 0
-            search.done((products) => def.resolve(products[0]));
+            search.done((products) => def.resolve((products.length) ? products[0] : false))
+                .fail((...res) => def.reject(res));
         }
 
         def.then(() => _private._requestEndEvent('Sku'));
@@ -125,13 +106,12 @@ export default {
 
         let productData = {};
         let params = {fq: []};
-        const _productCache = _private._getProductCache();
 
         for ( let i = 0, len = productIdArray.length; i < len; i += 1 ) {
-            if ( this.globalHelpers.isUndefined(_productCache[productIdArray[i]]) ) {
+            if ( this.globalHelpers.isUndefined(this.productCache[productIdArray[i]]) ) {
                 params.fq.push(`productId:${productIdArray[i]}`);
             } else {
-                productData[productIdArray[i]] = _productCache[productIdArray[i]];
+                productData[productIdArray[i]] = this.productCache[productIdArray[i]];
             }
         }
 
@@ -143,8 +123,8 @@ export default {
                     productData[products[i].productId] = products[i];
                 }
 
-                def.resolve(productData);
-            });
+                def.resolve(this.globalHelpers.length(productData) ? productData : false);
+            }).fail((...res) => def.reject(res));
         } else {
             def.resolve(productData);
         }
@@ -174,15 +154,14 @@ export default {
 
         let productData = {};
         let params = {fq: []};
-        const _productCache = _private._getProductCache();
-        const _skuCache = _private._getSkuCache();
 
         for ( let i = 0, len = skuIdArray.length; i < len; i += 1 ) {
-            if ( ! _skuCache[skuIdArray[i]] ) {
+            if ( !this.skusProductIds[skuIdArray[i]] ) {
                 params.fq.push(`skuId:${skuIdArray[i]}`);
             } else {
-                const productId = _skuCache[skuIdArray[i]];
-                productData[productId] = _productCache[productId];
+                let productId = this.skusProductIds[skuIdArray[i]];
+
+                productData[productId] = this.productCache[productId];
             }
         }
 
@@ -194,8 +173,8 @@ export default {
                     productData[products[i].productId] = products[i];
                 }
 
-                def.resolve(productData);
-            });
+                def.resolve(this.globalHelpers.length(productData) ? productData : false);
+            }).fail((...res) => def.reject(res));
         } else {
             def.resolve(productData);
         }
@@ -275,12 +254,15 @@ export default {
         /* eslint-enable */
 
         if ( (rangeParam._to - rangeParam._from) > 49 ) {
-            def.reject('Range must be a max value between 50 items');
+            throw new RangeError('Range must be a max value between 50 items');
         }
 
         $.ajax({
             url: CONSTANTS.SEARCH_URL,
             data: $.param(params, true),
+            beforeSend(xhr) {
+                _private._requestStartEvent();
+            },
         })
         .then((res, statusText, xhr) => {
             const _res = res.map((item, index) => _private._parseCamelize(item));
@@ -379,14 +361,16 @@ export default {
         const search = _private._searchPage(params, headers);
         search.done((result) => {
             if ( splitList ) {
-                const $productsList = $(result).find(`li[layout=${searchParams.shelfId}]`).removeAttr('layout').addClass(_private._className);
+                const $productsList = $(result).find(`li[layout=${searchParams.shelfId}]`)
+                    .removeClass('first last')
+                    .removeAttr('layout')
+                    .addClass(_private._className);
 
                 def.resolve($productsList);
             } else {
                 def.resolve(result);
             }
-        })
-        .fail((err) => def.reject(err));
+        }).fail((err) => def.reject(err));
 
         def.then(() => _private._requestEndEvent('SearchPage'));
 

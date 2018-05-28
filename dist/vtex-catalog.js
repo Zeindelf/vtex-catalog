@@ -6,7 +6,7 @@
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-05-14T03:20:49.323Z
+ * Date: 2018-05-28T01:24:06.924Z
  */
 
 (function (global, factory) {
@@ -15,14 +15,10 @@
 	(global.VTEX = global.VTEX || {}, global.VTEX.VtexCatalog = factory());
 }(this, (function () { 'use strict';
 
-var vtexUtilsVersion = '1.1.0';
+var vtexUtilsVersion = '1.10.0';
 
 var CONSTANTS = {
     SEARCH_URL: '/api/catalog_system/pub/products/search/',
-    PRODUCT_CACHE_NAME: '_vc_product',
-    SKU_CACHE_NAME: '_vc_sku',
-    EXPIRE_TIME: 60 * 60 * 4, // Seconds * Minutes * Hours (default: 4h)
-    EVENT_TIME: 150, // Miliseconds
     ERRORS: {
         searchParamsNotDefined: 'Search parameters is not defined.',
         searchParamsNotAnObject: 'Search parameters is not a valid Object.',
@@ -197,87 +193,11 @@ var Private = function () {
         value: function _getInstance(vtexUtils, catalog) {
             this._globalHelpers = vtexUtils.globalHelpers;
             this._catalog = catalog;
-
-            this._storage = vtexUtils.storage;
-            this._session = this._storage.session;
         }
     }, {
         key: '_error',
         value: function _error(type) {
             throw new Error(CONSTANTS.ERRORS[type]);
-        }
-    }, {
-        key: '_setSessionCache',
-        value: function _setSessionCache(catalogCache) {
-            this._catalogCache = catalogCache;
-            this._initStorage();
-        }
-
-        /**
-         * Init and validate Session Store Cache
-         * @return {Void}
-         */
-
-    }, {
-        key: '_initStorage',
-        value: function _initStorage() {
-            if (this._globalHelpers.isNull(this._session.get(CONSTANTS.PRODUCT_CACHE_NAME))) {
-                this._session.set(CONSTANTS.PRODUCT_CACHE_NAME, {});
-            }
-
-            if (this._globalHelpers.isNull(this._session.get(CONSTANTS.SKU_CACHE_NAME))) {
-                this._session.set(CONSTANTS.SKU_CACHE_NAME, {});
-            }
-        }
-
-        /**
-         * Store products into Session Storage
-         */
-
-    }, {
-        key: '_setProductCache',
-        value: function _setProductCache(products) {
-            if (this._catalogCache) {
-                var productCache = this._session.get(CONSTANTS.PRODUCT_CACHE_NAME);
-
-                for (var id in products) {
-                    if (!productCache.hasOwnProperty(id)) {
-                        productCache[id] = products[id];
-                    }
-                }
-
-                this._session.set(CONSTANTS.PRODUCT_CACHE_NAME, productCache, CONSTANTS.EXPIRE_TIME);
-            }
-        }
-
-        /**
-         * Store SKUs ID into Session Storage
-         */
-
-    }, {
-        key: '_setSkuCache',
-        value: function _setSkuCache(productsId) {
-            if (this._catalogCache) {
-                var productIdCache = this._session.get(CONSTANTS.SKU_CACHE_NAME);
-
-                for (var id in productsId) {
-                    if (!productIdCache.hasOwnProperty(id)) {
-                        productIdCache[id] = productsId[id];
-                    }
-                }
-
-                this._session.set(CONSTANTS.SKU_CACHE_NAME, productIdCache, CONSTANTS.EXPIRE_TIME);
-            }
-        }
-    }, {
-        key: '_getProductCache',
-        value: function _getProductCache() {
-            return this._catalogCache ? this._session.get(CONSTANTS.PRODUCT_CACHE_NAME) : this._catalog.productCache;
-        }
-    }, {
-        key: '_getSkuCache',
-        value: function _getSkuCache() {
-            return this._catalogCache ? this._session.get(CONSTANTS.SKU_CACHE_NAME) : this._catalog.skusProductIds;
         }
 
         /**
@@ -294,10 +214,7 @@ var Private = function () {
                 items = product.items;
 
             this._catalog.productCache[productId] = product;
-
-            if (this._catalogCache) {
-                this._setProductCache(this._catalog.productCache);
-            }
+            this._catalog.productCache[productId] = product;
 
             items.forEach(function (item) {
                 var itemId = item.itemId;
@@ -321,6 +238,7 @@ var Private = function () {
 
             var headers = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
+            var self = this;
             var paramsFormatted = $.extend({}, params);
             var xhrArray = this._pendingFetchArray;
             var productData = [];
@@ -375,6 +293,8 @@ var Private = function () {
                     url: CONSTANTS.SEARCH_URL,
                     data: $.param(paramsFormatted, true),
                     beforeSend: function beforeSend(xhr) {
+                        self._requestStartEvent();
+
                         for (var header in headers) {
                             if ({}.hasOwnProperty.call(headers, header)) {
                                 xhr.setRequestHeader(header, headers[header]);
@@ -452,11 +372,13 @@ var Private = function () {
                     }
                 }
 
-                if (productData.length) {
-                    _this2._setSkuCache(_this2._catalog.skusProductIds);
+                def.resolve(productData);
+            }).fail(function () {
+                for (var _len2 = arguments.length, err = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+                    err[_key2] = arguments[_key2];
                 }
 
-                def.resolve(productData);
+                return def.reject(err);
             });
 
             return def.promise();
@@ -472,6 +394,7 @@ var Private = function () {
     }, {
         key: '_searchPage',
         value: function _searchPage(params, headers) {
+            var self = this;
             var paramsFormatted = $.extend({}, params);
             var resources = this._maxParamsPerRequest + '-' + (this._maxParamsPerRequest - 1);
 
@@ -483,6 +406,8 @@ var Private = function () {
                 url: '/buscapagina/',
                 data: $.param(paramsFormatted, true),
                 beforeSend: function beforeSend(xhr) {
+                    self._requestStartEvent();
+
                     for (var header in headers) {
                         if ({}.hasOwnProperty.call(headers, header)) {
                             xhr.setRequestHeader(header, headers[header]);
@@ -491,7 +416,7 @@ var Private = function () {
                     xhr.setRequestHeader('resources', resources);
                 }
             }).then(function (products) {
-                def.resolve(products);
+                return def.resolve(products);
             });
 
             return def.promise();
@@ -534,7 +459,22 @@ var Private = function () {
         }
 
         /**
+         * Request Start Event
+         */
+
+    }, {
+        key: '_requestStartEvent',
+        value: function _requestStartEvent() {
+            /* eslint-disable */
+            var ev = $.Event('requestStart.vtexCatalog');
+            /* eslint-enable */
+
+            $(document).trigger(ev);
+        }
+
+        /**
          * Request End Events
+         *
          * @param  {String} type  Register specific event type
          */
 
@@ -545,9 +485,7 @@ var Private = function () {
             var ev = $.Event('request' + type + 'End.vtexCatalog');
             /* eslint-enable */
 
-            setTimeout(function () {
-                $(document).trigger(ev);
-            }, this._eventTime);
+            $(document).trigger(ev);
         }
     }]);
     return Private;
@@ -562,10 +500,6 @@ var vtexCatalogMethods = {
      */
     _setInstance: function _setInstance(vtexUtils, catalogCache) {
         _private._getInstance(vtexUtils, this);
-        _private._setSessionCache(catalogCache);
-    },
-    setEventTime: function setEventTime(time) {
-        _private._eventTime = this.globalHelpers.isNumber(time) ? time : CONSTANTS.EVENT_TIME;
     },
     setCamelize: function setCamelize() {
         var camelize = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
@@ -576,12 +510,6 @@ var vtexCatalogMethods = {
     },
     setShelfClass: function setShelfClass(className) {
         _private._className = this.globalHelpers.isString(className) ? className : '';
-    },
-    getProductCache: function getProductCache() {
-        return _private._getProductCache();
-    },
-    getSkusProductId: function getSkusProductId() {
-        return _private._getSkuCache();
     },
 
 
@@ -599,10 +527,8 @@ var vtexCatalogMethods = {
         var def = $.Deferred();
         /* eslint-enable */
 
-        var _productCache = _private._getProductCache();
-
-        if (_productCache[productId]) {
-            def.resolve(_productCache[productId]);
+        if (this.productCache[productId]) {
+            def.resolve(this.productCache[productId]);
         } else {
             var params = {
                 fq: ['productId:' + productId]
@@ -610,9 +536,14 @@ var vtexCatalogMethods = {
 
             var search = _private._search(params);
 
-            // Since it should be only 1 item set index is 0
             search.done(function (products) {
-                return def.resolve(products[0]);
+                return def.resolve(products.length ? products[0] : false);
+            }).fail(function () {
+                for (var _len = arguments.length, res = Array(_len), _key = 0; _key < _len; _key++) {
+                    res[_key] = arguments[_key];
+                }
+
+                return def.reject(res);
             });
         }
 
@@ -639,21 +570,22 @@ var vtexCatalogMethods = {
         var def = $.Deferred();
         /* eslint-enable */
 
-        var _productCache = _private._getProductCache();
-        var _skuCache = _private._getSkuCache();
-
-        if (_skuCache[skuId]) {
-            def.resolve(_productCache[_skuCache[skuId]]);
+        if (this.skusProductIds[skuId]) {
+            def.resolve(this.productCache[this.skusProductIds[skuId]]);
         } else {
             var params = {
                 fq: ['skuId:' + skuId]
             };
 
             var search = _private._search(params);
-
-            // Since it should be only 1 item set index is 0
             search.done(function (products) {
-                return def.resolve(products[0]);
+                return def.resolve(products.length ? products[0] : false);
+            }).fail(function () {
+                for (var _len2 = arguments.length, res = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+                    res[_key2] = arguments[_key2];
+                }
+
+                return def.reject(res);
             });
         }
 
@@ -671,6 +603,8 @@ var vtexCatalogMethods = {
      * @return {Promise}                            Promise with search results
      */
     searchProductArray: function searchProductArray(productIdArray) {
+        var _this = this;
+
         if (this.globalHelpers.isUndefined(productIdArray)) {
             return _private._error('productIdArrayNotDefined');
         }
@@ -685,13 +619,12 @@ var vtexCatalogMethods = {
 
         var productData = {};
         var params = { fq: [] };
-        var _productCache = _private._getProductCache();
 
         for (var i = 0, len = productIdArray.length; i < len; i += 1) {
-            if (this.globalHelpers.isUndefined(_productCache[productIdArray[i]])) {
+            if (this.globalHelpers.isUndefined(this.productCache[productIdArray[i]])) {
                 params.fq.push('productId:' + productIdArray[i]);
             } else {
-                productData[productIdArray[i]] = _productCache[productIdArray[i]];
+                productData[productIdArray[i]] = this.productCache[productIdArray[i]];
             }
         }
 
@@ -699,11 +632,17 @@ var vtexCatalogMethods = {
             var search = _private._search(params);
 
             search.done(function (products) {
-                for (var _i = 0, _len = products.length; _i < _len; _i += 1) {
+                for (var _i = 0, _len3 = products.length; _i < _len3; _i += 1) {
                     productData[products[_i].productId] = products[_i];
                 }
 
-                def.resolve(productData);
+                def.resolve(_this.globalHelpers.length(productData) ? productData : false);
+            }).fail(function () {
+                for (var _len4 = arguments.length, res = Array(_len4), _key3 = 0; _key3 < _len4; _key3++) {
+                    res[_key3] = arguments[_key3];
+                }
+
+                return def.reject(res);
             });
         } else {
             def.resolve(productData);
@@ -723,6 +662,8 @@ var vtexCatalogMethods = {
      * @return {Promise}                    Promise with search results
      */
     searchSkuArray: function searchSkuArray(skuIdArray) {
+        var _this2 = this;
+
         if (this.globalHelpers.isUndefined(skuIdArray)) {
             return _private._error('skuIdArrayNotDefined');
         }
@@ -737,15 +678,14 @@ var vtexCatalogMethods = {
 
         var productData = {};
         var params = { fq: [] };
-        var _productCache = _private._getProductCache();
-        var _skuCache = _private._getSkuCache();
 
         for (var i = 0, len = skuIdArray.length; i < len; i += 1) {
-            if (!_skuCache[skuIdArray[i]]) {
+            if (!this.skusProductIds[skuIdArray[i]]) {
                 params.fq.push('skuId:' + skuIdArray[i]);
             } else {
-                var productId = _skuCache[skuIdArray[i]];
-                productData[productId] = _productCache[productId];
+                var productId = this.skusProductIds[skuIdArray[i]];
+
+                productData[productId] = this.productCache[productId];
             }
         }
 
@@ -753,11 +693,17 @@ var vtexCatalogMethods = {
             var search = _private._search(params);
 
             search.done(function (products) {
-                for (var _i2 = 0, _len2 = products.length; _i2 < _len2; _i2 += 1) {
+                for (var _i2 = 0, _len5 = products.length; _i2 < _len5; _i2 += 1) {
                     productData[products[_i2].productId] = products[_i2];
                 }
 
-                def.resolve(productData);
+                def.resolve(_this2.globalHelpers.length(productData) ? productData : false);
+            }).fail(function () {
+                for (var _len6 = arguments.length, res = Array(_len6), _key4 = 0; _key4 < _len6; _key4++) {
+                    res[_key4] = arguments[_key4];
+                }
+
+                return def.reject(res);
             });
         } else {
             def.resolve(productData);
@@ -812,7 +758,7 @@ var vtexCatalogMethods = {
                     // Generate a 'c' param in the 'mapParam' for each category
                     var categoryIds = param.split('/');
 
-                    for (var z = 0, _len3 = categoryIds.length; z < _len3; z += 1) {
+                    for (var z = 0, _len7 = categoryIds.length; z < _len7; z += 1) {
                         // If the 'categoryId' is a number
                         if (categoryIds[z].match(/\d.+/gi)) {
                             mapParam.map.push('c');
@@ -843,12 +789,15 @@ var vtexCatalogMethods = {
         /* eslint-enable */
 
         if (rangeParam._to - rangeParam._from > 49) {
-            def.reject('Range must be a max value between 50 items');
+            throw new RangeError('Range must be a max value between 50 items');
         }
 
         $.ajax({
             url: CONSTANTS.SEARCH_URL,
-            data: $.param(params, true)
+            data: $.param(params, true),
+            beforeSend: function beforeSend(xhr) {
+                _private._requestStartEvent();
+            }
         }).then(function (res, statusText, xhr) {
             var _res = res.map(function (item, index) {
                 return _private._parseCamelize(item);
@@ -956,7 +905,7 @@ var vtexCatalogMethods = {
         var search = _private._searchPage(params, headers);
         search.done(function (result) {
             if (splitList) {
-                var $productsList = $(result).find('li[layout=' + searchParams.shelfId + ']').removeAttr('layout').addClass(_private._className);
+                var $productsList = $(result).find('li[layout=' + searchParams.shelfId + ']').removeClass('first last').removeAttr('layout').addClass(_private._className);
 
                 def.resolve($productsList);
             } else {
@@ -980,7 +929,6 @@ var vtexCatalogMethods = {
  */
 
 var VtexCatalog = function VtexCatalog(vtexUtils) {
-  var catalogCache = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
   classCallCheck(this, VtexCatalog);
 
   /**
@@ -1021,12 +969,6 @@ var VtexCatalog = function VtexCatalog(vtexUtils) {
   this.vtexHelpers = vtexUtils.vtexHelpers;
 
   /**
-   * Local/Session Storage
-   * @type {Object}
-   */
-  this.storage = vtexUtils.storage;
-
-  /**
    * Object with data of the products searched
    * @type {Object}
    */
@@ -1050,7 +992,7 @@ var VtexCatalog = function VtexCatalog(vtexUtils) {
    * Sets instance for private Methods
    * @type {Method}
    */
-  this._setInstance(vtexUtils, catalogCache);
+  this._setInstance(vtexUtils);
 };
 
 return VtexCatalog;
