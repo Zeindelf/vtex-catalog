@@ -1,12 +1,12 @@
 
 /*!!
- * VtexCatalog.js v1.1.0
+ * VtexCatalog.js v1.1.1
  * https://github.com/zeindelf/vtex-catalog
  *
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-07-10T14:04:47.328Z
+ * Date: 2018-07-10T14:12:44.302Z
  */
 
 (function (global, factory) {
@@ -996,7 +996,7 @@ var VtexCatalog = function VtexCatalog(vtexUtils) {
    * Version
    * @type {String}
    */
-  this.version = '1.1.0';
+  this.version = '1.1.1';
 
   /**
    * Package name
