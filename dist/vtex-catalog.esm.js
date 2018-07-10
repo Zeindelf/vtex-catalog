@@ -1,12 +1,12 @@
 
 /*!!
- * VtexCatalog.js v1.0.0
+ * VtexCatalog.js v1.1.0
  * https://github.com/zeindelf/vtex-catalog
  *
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-06-03T02:41:27.050Z
+ * Date: 2018-07-10T14:04:47.328Z
  */
 
 var vtexUtilsVersion = '1.10.0';
@@ -193,6 +193,14 @@ var Private = function () {
          * @type {Boolean}
          */
         this._priceInfo = false;
+
+        /**
+         * Sort sku items
+         * @type {Mix}
+         */
+        this._sortSku = false;
+        this._sortSkuItems = [];
+        this._sortSkuName = '';
     }
 
     createClass(Private, [{
@@ -337,6 +345,7 @@ var Private = function () {
                         // Camelize items
                         product = _this2._parseCamelize(product);
                         product = _this2._setPriceInfo(product);
+                        product = _this2._sortSku(product);
                         _this2._setCache(product);
                     });
 
@@ -486,6 +495,16 @@ var Private = function () {
 
             return product;
         }
+    }, {
+        key: '_sortSku',
+        value: function _sortSku(product) {
+            if (this._sortSku) {
+                var sorted = this._vtexHelpers.sortProductSearch(product, this._sortSkuItems, this._sortSkuName);
+                product.items = sorted;
+            }
+
+            return product;
+        }
 
         /**
          * Request Start Event
@@ -527,7 +546,7 @@ var vtexCatalogMethods = {
      * Sets Catalog instance
      * @return {Void}
      */
-    _setInstance: function _setInstance(vtexUtils, catalogCache) {
+    _setInstance: function _setInstance(vtexUtils) {
         _private._getInstance(vtexUtils, this);
     },
     setCamelize: function setCamelize(camelize, props) {
@@ -536,6 +555,11 @@ var vtexCatalogMethods = {
     },
     setPriceInfo: function setPriceInfo(priceInfo) {
         _private._priceInfo = priceInfo;
+    },
+    setSortSku: function setSortSku(sortSku, sortSkuItems, sortSkuName) {
+        _private._sortSku = sortSku;
+        _private._sortSkuItems = sortSkuItems;
+        _private._sortSkuName = sortSkuName;
     },
     setShelfClass: function setShelfClass(className) {
         _private._className = this.globalHelpers.isString(className) ? className : '';
@@ -954,6 +978,11 @@ var vtexCatalogMethods = {
     }
 };
 
+/**
+ * Create a VtexCatalog class
+ * Vtex utilities methods
+ */
+
 var VtexCatalog = function VtexCatalog(vtexUtils) {
   classCallCheck(this, VtexCatalog);
 
@@ -961,7 +990,7 @@ var VtexCatalog = function VtexCatalog(vtexUtils) {
    * Version
    * @type {String}
    */
-  this.version = '1.0.0';
+  this.version = '1.1.0';
 
   /**
    * Package name
