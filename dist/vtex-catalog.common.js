@@ -1,12 +1,12 @@
 
 /*!!
- * VtexCatalog.js v1.1.1
+ * VtexCatalog.js v1.1.2
  * https://github.com/zeindelf/vtex-catalog
  *
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-07-10T14:12:44.302Z
+ * Date: 2018-07-10T14:19:38.291Z
  */
 
 'use strict';
@@ -347,7 +347,7 @@ var Private = function () {
                         // Camelize items
                         product = _this2._parseCamelize(product);
                         product = _this2._setPriceInfo(product);
-                        product = _this2._sortSku(product);
+                        product = _this2._setSortSku(product);
                         _this2._setCache(product);
                     });
 
@@ -498,8 +498,8 @@ var Private = function () {
             return product;
         }
     }, {
-        key: '_sortSku',
-        value: function _sortSku(product) {
+        key: '_setSortSku',
+        value: function _setSortSku(product) {
             if (this._sortSku) {
                 var sorted = this._vtexHelpers.sortProductSearch(product, this._sortSkuItems, this._sortSkuName);
                 product.items = sorted;
@@ -992,7 +992,7 @@ var VtexCatalog = function VtexCatalog(vtexUtils) {
    * Version
    * @type {String}
    */
-  this.version = '1.1.1';
+  this.version = '1.1.2';
 
   /**
    * Package name

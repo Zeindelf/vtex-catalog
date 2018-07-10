@@ -12,7 +12,7 @@ class VtexCatalog {
          * Version
          * @type {String}
          */
-        this.version = '1.1.1';
+        this.version = '1.1.2';
 
         /**
          * Package name

@@ -169,7 +169,7 @@ class Private {
                     // Camelize items
                     product = this._parseCamelize(product);
                     product = this._setPriceInfo(product);
-                    product = this._sortSku(product);
+                    product = this._setSortSku(product);
                     this._setCache(product);
                 });
 
@@ -293,7 +293,7 @@ class Private {
         return product;
     }
 
-    _sortSku(product) {
+    _setSortSku(product) {
         if ( this._sortSku ) {
             const sorted = this._vtexHelpers.sortProductSearch(product, this._sortSkuItems, this._sortSkuName);
             product.items = sorted;
