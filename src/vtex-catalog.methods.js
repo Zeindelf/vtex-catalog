@@ -9,13 +9,23 @@ export default {
      * Sets Catalog instance
      * @return {Void}
      */
-    _setInstance(vtexUtils, catalogCache) {
+    _setInstance(vtexUtils) {
         _private._getInstance(vtexUtils, this);
     },
 
-    setCamelize(camelize = false, props = false) {
+    setCamelize(camelize, props) {
         _private._camelizeItems = camelize;
         _private._camelizeProps = props;
+    },
+
+    setPriceInfo(priceInfo) {
+        _private._priceInfo = priceInfo;
+    },
+
+    setSortSku(sortSku, sortSkuItems, sortSkuName) {
+        _private._sortSku = sortSku;
+        _private._sortSkuItems = sortSkuItems;
+        _private._sortSkuName = sortSkuName;
     },
 
     setShelfClass(className) {
@@ -265,10 +275,11 @@ export default {
             },
         })
         .then((res, statusText, xhr) => {
-            const _res = res.map((item, index) => _private._parseCamelize(item));
+            res = res.map((item) => _private._parseCamelize(item))
+                .map((item) => _private._setPriceInfo(item));
 
             /* eslint-disable */
-            return $.Deferred().resolve(_res, statusText, xhr).promise();
+            return $.Deferred().resolve(res, statusText, xhr).promise();
             /* eslint-enable */
         })
         .done((...results) => def.resolve(...results))

@@ -6,7 +6,7 @@
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-05-28T01:36:26.469Z
+ * Date: 2018-06-03T02:41:27.050Z
  */
 
 'use strict';
@@ -182,12 +182,26 @@ var Private = function () {
          * @type {Array}
          */
         this._pendingFetchArray = [];
+
+        /**
+         * Sets camelize response props
+         * @type {Boolean}
+         */
+        this._camelizeItems = false;
+        this._camelizeProps = false;
+
+        /**
+         * Sets all price info
+         * @type {Boolean}
+         */
+        this._priceInfo = false;
     }
 
     createClass(Private, [{
         key: '_getInstance',
         value: function _getInstance(vtexUtils, catalog) {
             this._globalHelpers = vtexUtils.globalHelpers;
+            this._vtexHelpers = vtexUtils.vtexHelpers;
             this._catalog = catalog;
         }
     }, {
@@ -209,7 +223,6 @@ var Private = function () {
             var productId = product.productId,
                 items = product.items;
 
-            this._catalog.productCache[productId] = product;
             this._catalog.productCache[productId] = product;
 
             items.forEach(function (item) {
@@ -325,6 +338,7 @@ var Private = function () {
                     products.forEach(function (product) {
                         // Camelize items
                         product = _this2._parseCamelize(product);
+                        product = _this2._setPriceInfo(product);
                         _this2._setCache(product);
                     });
 
@@ -423,6 +437,25 @@ var Private = function () {
          */
 
     }, {
+        key: '_setPriceInfo',
+        value: function _setPriceInfo(product) {
+            if (this._priceInfo) {
+                var availableProduct = this._vtexHelpers.getFirstAvailableSku(product);
+                product.available = availableProduct ? true : false;
+
+                for (var item in product.items) {
+                    if ({}.hasOwnProperty.call(product.items, item)) {
+                        var sku = product.items[item];
+                        var sellerInfo = this._globalHelpers.objectSearch(sku, { 'sellerDefault': true });
+
+                        this._globalHelpers.extend(product.items[item], this._vtexHelpers.getProductPriceInfo(sellerInfo));
+                    }
+                }
+            }
+
+            return product;
+        }
+    }, {
         key: '_parseCamelize',
         value: function _parseCamelize(product) {
             var _this3 = this;
@@ -431,7 +464,7 @@ var Private = function () {
                 product = this._globalHelpers.camelize(product);
 
                 if (product.hasOwnProperty('allSpecifications')) {
-                    product.allSpecifications = product.allSpecifications.map(function (item, index) {
+                    product.allSpecifications = product.allSpecifications.map(function (item) {
                         return _this3._globalHelpers.camelize(item);
                     });
                 }
@@ -449,6 +482,8 @@ var Private = function () {
                         }
                     }
                 }
+
+                product.isCamelized = true;
             }
 
             return product;
@@ -497,12 +532,12 @@ var vtexCatalogMethods = {
     _setInstance: function _setInstance(vtexUtils, catalogCache) {
         _private._getInstance(vtexUtils, this);
     },
-    setCamelize: function setCamelize() {
-        var camelize = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-        var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
+    setCamelize: function setCamelize(camelize, props) {
         _private._camelizeItems = camelize;
         _private._camelizeProps = props;
+    },
+    setPriceInfo: function setPriceInfo(priceInfo) {
+        _private._priceInfo = priceInfo;
     },
     setShelfClass: function setShelfClass(className) {
         _private._className = this.globalHelpers.isString(className) ? className : '';
@@ -795,12 +830,14 @@ var vtexCatalogMethods = {
                 _private._requestStartEvent();
             }
         }).then(function (res, statusText, xhr) {
-            var _res = res.map(function (item, index) {
+            res = res.map(function (item) {
                 return _private._parseCamelize(item);
+            }).map(function (item) {
+                return _private._setPriceInfo(item);
             });
 
             /* eslint-disable */
-            return $.Deferred().resolve(_res, statusText, xhr).promise();
+            return $.Deferred().resolve(res, statusText, xhr).promise();
             /* eslint-enable */
         }).done(function () {
             return def.resolve.apply(def, arguments);
@@ -918,11 +955,6 @@ var vtexCatalogMethods = {
         return def.promise();
     }
 };
-
-/**
- * Create a VtexCatalog class
- * Vtex utilities methods
- */
 
 var VtexCatalog = function VtexCatalog(vtexUtils) {
   classCallCheck(this, VtexCatalog);

@@ -32,10 +32,32 @@ class Private {
          * @type {Array}
          */
         this._pendingFetchArray = [];
+
+        /**
+         * Sets camelize response props
+         * @type {Boolean}
+         */
+        this._camelizeItems = false;
+        this._camelizeProps = false;
+
+        /**
+         * Sets all price info
+         * @type {Boolean}
+         */
+        this._priceInfo = false;
+
+        /**
+         * Sort sku items
+         * @type {Mix}
+         */
+        this._sortSku = false;
+        this._sortSkuItems = [];
+        this._sortSkuName = '';
     }
 
     _getInstance(vtexUtils, catalog) {
         this._globalHelpers = vtexUtils.globalHelpers;
+        this._vtexHelpers = vtexUtils.vtexHelpers;
         this._catalog = catalog;
     }
 
@@ -49,7 +71,6 @@ class Private {
      */
     _setCache(product) {
         const {productId, items} = product;
-        this._catalog.productCache[productId] = product;
         this._catalog.productCache[productId] = product;
 
         items.forEach((item) => {
@@ -147,6 +168,8 @@ class Private {
                 products.forEach((product) => {
                     // Camelize items
                     product = this._parseCamelize(product);
+                    product = this._setPriceInfo(product);
+                    product = this._sortSku(product);
                     this._setCache(product);
                 });
 
@@ -226,12 +249,30 @@ class Private {
     /**
      * Utils
      */
+    _setPriceInfo(product) {
+        if ( this._priceInfo ) {
+            const availableProduct = this._vtexHelpers.getFirstAvailableSku(product);
+            product.available = (availableProduct) ? true : false;
+
+            for ( let item in product.items ) {
+                if ( {}.hasOwnProperty.call(product.items, item) ) {
+                    const sku = product.items[item];
+                    const sellerInfo = this._globalHelpers.objectSearch(sku, {'sellerDefault': true});
+
+                    this._globalHelpers.extend(product.items[item], this._vtexHelpers.getProductPriceInfo(sellerInfo));
+                }
+            }
+        }
+
+        return product;
+    }
+
     _parseCamelize(product) {
         if ( this._camelizeItems ) {
             product = this._globalHelpers.camelize(product);
 
             if ( product.hasOwnProperty('allSpecifications') ) {
-                product.allSpecifications = product.allSpecifications.map((item, index) => this._globalHelpers.camelize(item));
+                product.allSpecifications = product.allSpecifications.map((item) => this._globalHelpers.camelize(item));
             }
 
             if ( this._camelizeProps ) {
@@ -245,6 +286,17 @@ class Private {
                     }
                 }
             }
+
+            product.isCamelized = true;
+        }
+
+        return product;
+    }
+
+    _sortSku(product) {
+        if ( this._sortSku ) {
+            const sorted = this._vtexHelpers.sortProductSearch(product, this._sortSkuItems, this._sortSkuName);
+            product.items = sorted;
         }
 
         return product;
