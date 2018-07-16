@@ -252,7 +252,7 @@ class Private {
         let map = '?map=c';
 
         for ( let i = 0; i < (pathQty - 1); i += 1 ) {
-            map += ',c'
+            map += ',c';
         }
 
         window.console.log(pathQty);

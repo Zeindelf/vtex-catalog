@@ -1,12 +1,12 @@
 
 /*!!
- * VtexCatalog.js v1.1.2
+ * VtexCatalog.js v1.1.3
  * https://github.com/zeindelf/vtex-catalog
  *
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-07-15T22:22:28.211Z
+ * Date: 2018-07-16T21:54:21.298Z
  */
 
 'use strict';
@@ -1020,6 +1020,11 @@ var vtexCatalogMethods = {
     }
 };
 
+/**
+ * Create a VtexCatalog class
+ * Vtex utilities methods
+ */
+
 var VtexCatalog = function VtexCatalog(vtexUtils) {
   classCallCheck(this, VtexCatalog);
 
@@ -1027,7 +1032,7 @@ var VtexCatalog = function VtexCatalog(vtexUtils) {
    * Version
    * @type {String}
    */
-  this.version = '1.1.2';
+  this.version = '1.1.3';
 
   /**
    * Package name
