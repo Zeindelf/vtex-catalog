@@ -3,6 +3,7 @@ const vtexUtilsVersion = '1.10.0';
 
 export default {
     SEARCH_URL: '/api/catalog_system/pub/products/search/',
+    FACETS_URL: '/api/catalog_system/pub/facets/search/',
     ERRORS: {
         searchParamsNotDefined: `Search parameters is not defined.`,
         searchParamsNotAnObject: `Search parameters is not a valid Object.`,

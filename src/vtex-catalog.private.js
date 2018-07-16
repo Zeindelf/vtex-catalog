@@ -246,6 +246,28 @@ class Private {
         return def.promise();
     }
 
+    _searchFacets() {
+        const pathname = window.location.pathname;
+        const pathQty = globalHelpers.arrayCompact(pathname.split('/')).length;
+        let map = '?map=c';
+
+        for ( let i = 0; i < (pathQty - 1); i += 1 ) {
+            map += ',c'
+        }
+
+        window.console.log(pathQty);
+        window.console.log(map);
+
+        /* eslint-disable */
+        return $.Deferred((def) => {
+            /* eslint-enable */
+            return $.ajax({
+                url: `${CONSTANTS.FACETS_URL}/${pathname}${map}`,
+            }).then((res) => def.resolve(res))
+            .fail((err) => def.reject(err));
+        }).promise();
+    }
+
     /**
      * Utils
      */

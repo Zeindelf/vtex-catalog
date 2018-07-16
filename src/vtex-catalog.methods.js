@@ -387,4 +387,16 @@ export default {
 
         return def.promise();
     },
+
+    searchFacets() {
+        /* eslint-disable */
+        const def = $.Deferred();
+        /* eslint-enable */
+
+        _private._searchFacets()
+            .then((res) => def.resolve(res))
+            .fail((err) => def.reject(err));
+
+        return def.promise();
+    },
 };

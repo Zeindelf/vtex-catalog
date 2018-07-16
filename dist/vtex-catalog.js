@@ -6,7 +6,7 @@
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-07-10T14:19:38.291Z
+ * Date: 2018-07-15T22:22:28.211Z
  */
 
 (function (global, factory) {
@@ -19,6 +19,7 @@ var vtexUtilsVersion = '1.10.0';
 
 var CONSTANTS = {
     SEARCH_URL: '/api/catalog_system/pub/products/search/',
+    FACETS_URL: '/api/catalog_system/pub/facets/search/',
     ERRORS: {
         searchParamsNotDefined: 'Search parameters is not defined.',
         searchParamsNotAnObject: 'Search parameters is not a valid Object.',
@@ -443,6 +444,32 @@ var Private = function () {
             });
 
             return def.promise();
+        }
+    }, {
+        key: '_searchFacets',
+        value: function _searchFacets() {
+            var pathname = window.location.pathname;
+            var pathQty = globalHelpers.arrayCompact(pathname.split('/')).length;
+            var map = '?map=c';
+
+            for (var i = 0; i < pathQty - 1; i += 1) {
+                map += ',c';
+            }
+
+            window.console.log(pathQty);
+            window.console.log(map);
+
+            /* eslint-disable */
+            return $.Deferred(function (def) {
+                /* eslint-enable */
+                return $.ajax({
+                    url: CONSTANTS.FACETS_URL + '/' + pathname + map
+                }).then(function (res) {
+                    return def.resolve(res);
+                }).fail(function (err) {
+                    return def.reject(err);
+                });
+            }).promise();
         }
 
         /**
@@ -981,13 +1008,21 @@ var vtexCatalogMethods = {
         });
 
         return def.promise();
+    },
+    searchFacets: function searchFacets() {
+        /* eslint-disable */
+        var def = $.Deferred();
+        /* eslint-enable */
+
+        _private._searchFacets().then(function (res) {
+            return def.resolve(res);
+        }).fail(function (err) {
+            return def.reject(err);
+        });
+
+        return def.promise();
     }
 };
-
-/**
- * Create a VtexCatalog class
- * Vtex utilities methods
- */
 
 var VtexCatalog = function VtexCatalog(vtexUtils) {
   classCallCheck(this, VtexCatalog);
