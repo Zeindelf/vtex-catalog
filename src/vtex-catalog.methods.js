@@ -28,6 +28,10 @@ export default {
         _private._sortSkuName = sortSkuName;
     },
 
+    setInstallmentsGroup(installmentGroup) {
+        _private._installmentGroup = installmentGroup;
+    },
+
     setShelfClass(className) {
         _private._className = this.globalHelpers.isString(className) ? className : '';
     },

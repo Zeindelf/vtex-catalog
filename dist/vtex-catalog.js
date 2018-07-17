@@ -6,7 +6,7 @@
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-07-16T21:54:21.298Z
+ * Date: 2018-07-17T06:31:32.108Z
  */
 
 (function (global, factory) {
@@ -208,6 +208,11 @@ var Private = function () {
         this._sortSku = false;
         this._sortSkuItems = [];
         this._sortSkuName = '';
+
+        /**
+         * Group installments by name
+         */
+        this._installmentGroup = false;
     }
 
     createClass(Private, [{
@@ -353,6 +358,7 @@ var Private = function () {
                         product = _this2._parseCamelize(product);
                         product = _this2._setPriceInfo(product);
                         product = _this2._setSortSku(product);
+                        product = _this2._setInstallmentsGroup(product);
                         _this2._setCache(product);
                     });
 
@@ -538,6 +544,23 @@ var Private = function () {
 
             return product;
         }
+    }, {
+        key: '_setInstallmentsGroup',
+        value: function _setInstallmentsGroup(product) {
+            if (this._installmentGroup) {
+                for (var item in product.items) {
+                    if ({}.hasOwnProperty.call(product.items, item)) {
+                        var sku = product.items[item];
+                        var sellerInfo = this._globalHelpers.objectSearch(sku, { 'sellerDefault': true });
+                        var groupedInstallments = vtexHelpers.getGroupInstallments(sellerInfo); // Uses sellerDefault
+
+                        product.items[item].installmentsGrouped = this._globalHelpers.isObjectEmpty(groupedInstallments) ? null : groupedInstallments;
+                    }
+                }
+            }
+
+            return product;
+        }
 
         /**
          * Request Start Event
@@ -593,6 +616,9 @@ var vtexCatalogMethods = {
         _private._sortSku = sortSku;
         _private._sortSkuItems = sortSkuItems;
         _private._sortSkuName = sortSkuName;
+    },
+    setInstallmentsGroup: function setInstallmentsGroup(installmentGroup) {
+        _private._installmentGroup = installmentGroup;
     },
     setShelfClass: function setShelfClass(className) {
         _private._className = this.globalHelpers.isString(className) ? className : '';
@@ -1023,11 +1049,6 @@ var vtexCatalogMethods = {
         return def.promise();
     }
 };
-
-/**
- * Create a VtexCatalog class
- * Vtex utilities methods
- */
 
 var VtexCatalog = function VtexCatalog(vtexUtils) {
   classCallCheck(this, VtexCatalog);

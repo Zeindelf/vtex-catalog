@@ -53,6 +53,11 @@ class Private {
         this._sortSku = false;
         this._sortSkuItems = [];
         this._sortSkuName = '';
+
+        /**
+         * Group installments by name
+         */
+        this._installmentGroup = false;
     }
 
     _getInstance(vtexUtils, catalog) {
@@ -170,6 +175,7 @@ class Private {
                     product = this._parseCamelize(product);
                     product = this._setPriceInfo(product);
                     product = this._setSortSku(product);
+                    product = this._setInstallmentsGroup(product);
                     this._setCache(product);
                 });
 
@@ -319,6 +325,22 @@ class Private {
         if ( this._sortSku ) {
             const sorted = this._vtexHelpers.sortProductSearch(product, this._sortSkuItems, this._sortSkuName);
             product.items = sorted;
+        }
+
+        return product;
+    }
+
+    _setInstallmentsGroup(product) {
+        if ( this._installmentGroup ) {
+            for ( let item in product.items ) {
+                if ( {}.hasOwnProperty.call(product.items, item) ) {
+                    const sku = product.items[item];
+                    const sellerInfo = this._globalHelpers.objectSearch(sku, {'sellerDefault': true});
+                    const groupedInstallments = vtexHelpers.getGroupInstallments(sellerInfo); // Uses sellerDefault
+
+                    product.items[item].installmentsGrouped = ( this._globalHelpers.isObjectEmpty(groupedInstallments) ) ? null : groupedInstallments;
+                }
+            }
         }
 
         return product;
