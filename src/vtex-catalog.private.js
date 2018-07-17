@@ -336,7 +336,7 @@ class Private {
                 if ( {}.hasOwnProperty.call(product.items, item) ) {
                     const sku = product.items[item];
                     const sellerInfo = this._globalHelpers.objectSearch(sku, {'sellerDefault': true});
-                    const groupedInstallments = vtexHelpers.getGroupInstallments(sellerInfo); // Uses sellerDefault
+                    const groupedInstallments = this._vtexHelpers.getGroupInstallments(sellerInfo); // Uses sellerDefault
 
                     product.items[item].installmentsGrouped = ( this._globalHelpers.isObjectEmpty(groupedInstallments) ) ? null : groupedInstallments;
                 }

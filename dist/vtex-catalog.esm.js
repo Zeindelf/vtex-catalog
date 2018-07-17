@@ -1,12 +1,12 @@
 
 /*!!
- * VtexCatalog.js v1.2.0
+ * VtexCatalog.js v1.2.1
  * https://github.com/zeindelf/vtex-catalog
  *
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-07-17T14:32:35.362Z
+ * Date: 2018-07-17T15:03:09.463Z
  */
 
 var vtexUtilsVersion = '1.10.0';
@@ -546,7 +546,7 @@ var Private = function () {
                     if ({}.hasOwnProperty.call(product.items, item)) {
                         var sku = product.items[item];
                         var sellerInfo = this._globalHelpers.objectSearch(sku, { 'sellerDefault': true });
-                        var groupedInstallments = vtexHelpers.getGroupInstallments(sellerInfo); // Uses sellerDefault
+                        var groupedInstallments = this._vtexHelpers.getGroupInstallments(sellerInfo); // Uses sellerDefault
 
                         product.items[item].installmentsGrouped = this._globalHelpers.isObjectEmpty(groupedInstallments) ? null : groupedInstallments;
                     }
@@ -1056,7 +1056,7 @@ var VtexCatalog = function VtexCatalog(vtexUtils) {
    * Version
    * @type {String}
    */
-  this.version = '1.2.0';
+  this.version = '1.2.1';
 
   /**
    * Package name
