@@ -1,6 +1,6 @@
 
-import CONSTANTS from './vtex-catalog.constants.js';
-import Private from './vtex-catalog.private.js';
+import CONSTANTS from './vtex-catalog.constants';
+import Private from './vtex-catalog.private';
 
 const _private = new Private();
 
@@ -34,6 +34,26 @@ export default {
 
     setShelfClass(className) {
         _private._className = this.globalHelpers.isString(className) ? className : '';
+    },
+
+    /**
+     * Custom filter for products search
+     * @param {Function} callback   Function with your rules
+     * @example
+     *     const customFilter = (product) => {
+     *         product.customProperty = 'CustomProperty';
+     *
+     *         return product;
+     *     };
+     *
+     *     vtexCatalog.setCustomFilter(customFilter);
+     */
+    setCustomFilter(callback) {
+        if ( !this.globalHelpers.isFunction(callback) ) {
+            return _private._error('callbackNotAFunction');
+        }
+
+        _private._setCustomFilter = callback;
     },
 
     /**
@@ -110,7 +130,7 @@ export default {
             return _private._error('productIdArrayNotDefined');
         }
 
-        if ( ! this.globalHelpers.isArray(productIdArray) ) {
+        if ( !this.globalHelpers.isArray(productIdArray) ) {
             return _private._error('productIdArrayNotAnArray');
         }
 
@@ -119,7 +139,7 @@ export default {
         /* eslint-enable */
 
         let productData = {};
-        let params = {fq: []};
+        let params = { fq: [] };
 
         for ( let i = 0, len = productIdArray.length; i < len; i += 1 ) {
             if ( this.globalHelpers.isUndefined(this.productCache[productIdArray[i]]) ) {
@@ -158,7 +178,7 @@ export default {
             return _private._error('skuIdArrayNotDefined');
         }
 
-        if ( ! this.globalHelpers.isArray(skuIdArray) ) {
+        if ( !this.globalHelpers.isArray(skuIdArray) ) {
             return _private._error('skuIdArrayNotAnArray');
         }
 
@@ -213,15 +233,15 @@ export default {
             return _private._error('searchParamsNotDefined');
         }
 
-        if ( ! this.globalHelpers.isObject(params) ) {
+        if ( !this.globalHelpers.isObject(params) ) {
             return _private._error('searchParamsNotAnObject');
         }
 
-        if ( ! params.hasOwnProperty('fq') && ! params.hasOwnProperty('ft') ) {
+        if ( !params.hasOwnProperty('fq') && !params.hasOwnProperty('ft') ) {
             return _private._error('searchItemsNotDefined');
         }
 
-        if ( ! this.globalHelpers.isArray(range) ) {
+        if ( !this.globalHelpers.isArray(range) ) {
             return _private._error('searchRangeNotArray');
         }
 
@@ -316,7 +336,7 @@ export default {
      *     vtexCatalog.searchPage(params, splitList)
      *         .then(function(res) {
      *             window.console.log(res);
-     *             $('.js--listitems').append(res);
+     *             $('.js--list-items').append(res);
      *         })
      *         .fail(function(err) {window.console.log(err)});
      */
@@ -325,11 +345,11 @@ export default {
             return _private._error('searchParamsNotDefined');
         }
 
-        if ( ! this.globalHelpers.isPlainObject(searchParams) ) {
+        if ( !this.globalHelpers.isPlainObject(searchParams) ) {
             return _private._error('searchParamsNotAnObject');
         }
 
-        if ( ! searchParams.hasOwnProperty('fq') && ! searchParams.hasOwnProperty('ft') ) {
+        if ( !searchParams.hasOwnProperty('fq') && !searchParams.hasOwnProperty('ft') ) {
             return _private._error('searchItemsNotDefined');
         }
 
@@ -337,7 +357,7 @@ export default {
             return _private._error('shelfIdNotDefined');
         }
 
-        if ( ! this.globalHelpers.isString(searchParams.shelfId) ) {
+        if ( !this.globalHelpers.isString(searchParams.shelfId) ) {
             return _private._error('shelfIdNotAString');
         }
 

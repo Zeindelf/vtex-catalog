@@ -1,5 +1,5 @@
 
-const vtexUtilsVersion = '1.10.0';
+const vtexUtilsVersion = '1.17.0';
 
 export default {
     SEARCH_URL: '/api/catalog_system/pub/products/search/',
@@ -20,10 +20,11 @@ export default {
         searchItemsNotDefined: `Search items is not defined. Use 'fq' or 'ft' to search.`,
         shelfIdNotDefined: `'shelfId' is not defined.`,
         shelfIdNotAString: `'shelfId' is not a String.`,
+        callbackNotAFunction: `'callback' must be a Function`,
     },
     MESSAGES: {
         vtexUtils: 'VtexUtils.js is required and must be an instance. Download it from https://www.npmjs.com/package/vtex-utils and use "new VtexCatalog(new VtexUtils())"',
         vtexUtilsVersion: vtexUtilsVersion,
-        vtexUtilsVersionMessage: `VtexUtils version must be higher than ${vtexUtilsVersion}. Download last version on https://www.npmjs.com/package/vtex-utils`,
+        vtexUtilsVersionMessage: `'VtexUtils.js' version must be ${vtexUtilsVersion} or higher. Download last version on https://www.npmjs.com/package/vtex-utils`,
     },
 };

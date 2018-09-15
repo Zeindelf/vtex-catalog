@@ -1,6 +1,6 @@
 
-import CONSTANTS from './vtex-catalog.constants.js';
-import vtexCatalogMethods from './vtex-catalog.methods.js';
+import CONSTANTS from './vtex-catalog.constants';
+import vtexCatalogMethods from './vtex-catalog.methods';
 
 /**
  * Create a VtexCatalog class
@@ -29,15 +29,18 @@ class VtexCatalog {
             throw new TypeError(CONSTANTS.MESSAGES.vtexUtils);
         }
 
-        if ( vtexUtils.version < CONSTANTS.MESSAGES.vtexUtilsVersion ) {
-            throw new Error(CONSTANTS.MESSAGES.vtexUtilsVersionMessage);
-        }
-
         /**
          * Global Helpers instance
          * @type {GlobalHelpers}
          */
         this.globalHelpers = vtexUtils.globalHelpers;
+
+        /**
+         * Validate VtexUtils version
+         */
+        if ( this.globalHelpers.semverCompare(vtexUtils.version, CONSTANTS.MESSAGES.vtexUtilsVersion) < 0 ) {
+            throw new Error(CONSTANTS.MESSAGES.vtexUtilsVersionMessage);
+        }
 
         /**
          * Vtex Helpers instance

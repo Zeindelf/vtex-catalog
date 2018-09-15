@@ -1,5 +1,5 @@
 
-import CONSTANTS from './vtex-catalog.constants.js';
+import CONSTANTS from './vtex-catalog.constants';
 
 class Private {
     constructor() {
@@ -58,6 +58,8 @@ class Private {
          * Group installments by name
          */
         this._installmentGroup = false;
+
+        this._setCustomFilter = null;
     }
 
     _getInstance(vtexUtils, catalog) {
@@ -171,11 +173,15 @@ class Private {
                 const products = request;
 
                 products.forEach((product) => {
-                    // Camelize items
                     product = this._parseCamelize(product);
                     product = this._setPriceInfo(product);
                     product = this._setSortSku(product);
                     product = this._setInstallmentsGroup(product);
+
+                    if ( !this._globalHelpers.isNull(this._setCustomFilter) ) {
+                        this._setCustomFilter.apply(this, [product]);
+                    }
+
                     this._setCache(product);
                 });
 

@@ -6,7 +6,7 @@
  * Copyright (c) 2017-2018 Zeindelf
  * Released under the MIT license
  *
- * Date: 2018-07-17T15:03:09.463Z
+ * Date: 2018-09-15T16:17:23.790Z
  */
 
 (function (global, factory) {
@@ -15,7 +15,7 @@
 	(global.VTEX = global.VTEX || {}, global.VTEX.VtexCatalog = factory());
 }(this, (function () { 'use strict';
 
-var vtexUtilsVersion = '1.10.0';
+var vtexUtilsVersion = '1.17.0';
 
 var CONSTANTS = {
     SEARCH_URL: '/api/catalog_system/pub/products/search/',
@@ -35,12 +35,13 @@ var CONSTANTS = {
         itemsIdNotAnArray: '\'itemsId\' is not an Array.',
         searchItemsNotDefined: 'Search items is not defined. Use \'fq\' or \'ft\' to search.',
         shelfIdNotDefined: '\'shelfId\' is not defined.',
-        shelfIdNotAString: '\'shelfId\' is not a String.'
+        shelfIdNotAString: '\'shelfId\' is not a String.',
+        callbackNotAFunction: '\'callback\' must be a Function'
     },
     MESSAGES: {
         vtexUtils: 'VtexUtils.js is required and must be an instance. Download it from https://www.npmjs.com/package/vtex-utils and use "new VtexCatalog(new VtexUtils())"',
         vtexUtilsVersion: vtexUtilsVersion,
-        vtexUtilsVersionMessage: 'VtexUtils version must be higher than ' + vtexUtilsVersion + '. Download last version on https://www.npmjs.com/package/vtex-utils'
+        vtexUtilsVersionMessage: '\'VtexUtils.js\' version must be ' + vtexUtilsVersion + ' or higher. Download last version on https://www.npmjs.com/package/vtex-utils'
     }
 };
 
@@ -213,6 +214,8 @@ var Private = function () {
          * Group installments by name
          */
         this._installmentGroup = false;
+
+        this._setCustomFilter = null;
     }
 
     createClass(Private, [{
@@ -354,11 +357,15 @@ var Private = function () {
                     var products = request;
 
                     products.forEach(function (product) {
-                        // Camelize items
                         product = _this2._parseCamelize(product);
                         product = _this2._setPriceInfo(product);
                         product = _this2._setSortSku(product);
                         product = _this2._setInstallmentsGroup(product);
+
+                        if (!_this2._globalHelpers.isNull(_this2._setCustomFilter)) {
+                            _this2._setCustomFilter.apply(_this2, [product]);
+                        }
+
                         _this2._setCache(product);
                     });
 
@@ -622,6 +629,27 @@ var vtexCatalogMethods = {
     },
     setShelfClass: function setShelfClass(className) {
         _private._className = this.globalHelpers.isString(className) ? className : '';
+    },
+
+
+    /**
+     * Custom filter for products search
+     * @param {Function} callback   Function with your rules
+     * @example
+     *     const customFilter = (product) => {
+     *         product.customProperty = 'CustomProperty';
+     *
+     *         return product;
+     *     };
+     *
+     *     vtexCatalog.setCustomFilter(customFilter);
+     */
+    setCustomFilter: function setCustomFilter(callback) {
+        if (!this.globalHelpers.isFunction(callback)) {
+            return _private._error('callbackNotAFunction');
+        }
+
+        _private._setCustomFilter = callback;
     },
 
 
@@ -956,7 +984,7 @@ var vtexCatalogMethods = {
      *     vtexCatalog.searchPage(params, splitList)
      *         .then(function(res) {
      *             window.console.log(res);
-     *             $('.js--listitems').append(res);
+     *             $('.js--list-items').append(res);
      *         })
      *         .fail(function(err) {window.console.log(err)});
      */
@@ -1050,11 +1078,6 @@ var vtexCatalogMethods = {
     }
 };
 
-/**
- * Create a VtexCatalog class
- * Vtex utilities methods
- */
-
 var VtexCatalog = function VtexCatalog(vtexUtils) {
   classCallCheck(this, VtexCatalog);
 
@@ -1079,15 +1102,18 @@ var VtexCatalog = function VtexCatalog(vtexUtils) {
     throw new TypeError(CONSTANTS.MESSAGES.vtexUtils);
   }
 
-  if (vtexUtils.version < CONSTANTS.MESSAGES.vtexUtilsVersion) {
-    throw new Error(CONSTANTS.MESSAGES.vtexUtilsVersionMessage);
-  }
-
   /**
    * Global Helpers instance
    * @type {GlobalHelpers}
    */
   this.globalHelpers = vtexUtils.globalHelpers;
+
+  /**
+   * Validate VtexUtils version
+   */
+  if (this.globalHelpers.semverCompare(vtexUtils.version, CONSTANTS.MESSAGES.vtexUtilsVersion) < 0) {
+    throw new Error(CONSTANTS.MESSAGES.vtexUtilsVersionMessage);
+  }
 
   /**
    * Vtex Helpers instance
