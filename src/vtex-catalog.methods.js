@@ -139,7 +139,7 @@ export default {
         /* eslint-enable */
 
         let productData = {};
-        let params = { fq: [] };
+        let params = {fq: []};
 
         for ( let i = 0, len = productIdArray.length; i < len; i += 1 ) {
             if ( this.globalHelpers.isUndefined(this.productCache[productIdArray[i]]) ) {
